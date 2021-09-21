@@ -1,6 +1,5 @@
-# {{cookiecutter.project_name}}
+# Portfolio balance
 
-{{cookiecutter.description}}
 
 ## Installation
 
@@ -10,4 +9,4 @@
 
 ## License
 
-[{{cookiecutter.open_source_license}}](LICENSE)
+[MIT](LICENSE)

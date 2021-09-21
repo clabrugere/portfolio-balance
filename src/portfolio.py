@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import differential_evolution, NonlinearConstraint
+from scipy.optimize import NonlinearConstraint, differential_evolution
 
 
 class Portfolio:
