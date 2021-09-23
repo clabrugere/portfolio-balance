@@ -73,7 +73,6 @@ class Portfolio:
         cash_delta, fees = self._transaction_costs(shares_rebalanced)
         cash_leftover = self.cash - (cash_delta.sum() + fees.sum())
         position_delta = np.abs(self.positions + cash_delta - self.target_positions).sum()
-        #position_delta = np.sqrt(((self.positions + cash_delta - self.target_positions) ** 2).sum())
         
         return position_delta + cash_leftover
 

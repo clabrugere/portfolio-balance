@@ -2,27 +2,28 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from src import data
+from src import ui, data
 from src.portfolio import Portfolio, fees_func
 
 
-@st.cache(show_spinner=False)
-def get_last_prices(assets):
-    return data.daily_close(assets, 0).values.ravel()
-
-
-def get_metrics(prices, shares, cash, target_weights, share_buy):
-    positions = prices * shares
-    portfolio_value = positions.sum() + cash
+def rebalance(df_portfolio, cash, no_selling):
+    shares = df_portfolio["Shares"].values.ravel()
+    prices = df_portfolio["Prices"].values.ravel()
+    target_weights = df_portfolio["Target weights"].values.ravel()
     
-    transaction = shares_buy * prices
-    fees = np.array([fees_func(x) for x in shares_buy * prices])
-    cash_leftover = cash - (transaction.sum() + fees.sum())
+    portfolio = Portfolio(shares, cash, fees_func)
+    shares_buy = portfolio.rebalance(prices, target_weights, no_selling=no_selling)
+    transactions = shares_buy * prices
+    fees = np.array([fees_func(x) for x in transactions])
+    cash_leftover = cash - (transactions.sum() + fees.sum())
     
-    positions_new = (shares + shares_buy) * prices
-    weights_new = positions_new / portfolio_value
+    df_portfolio_balanced = df_portfolio.copy()
+    df_portfolio_balanced["Shares"] = df_portfolio_balanced["Shares"] + shares_buy.astype(int)
+    df_portfolio_balanced["Buy/sold"] = shares_buy.astype(int)
+    df_portfolio_balanced["Position"] = df_portfolio_balanced["Shares"] * df_portfolio_balanced["Prices"]
+    df_portfolio_balanced["Weights"] = df_portfolio_balanced["Position"] / (df_portfolio_balanced["Position"].sum() + cash_leftover)
     
-    return transaction, fees, cash_leftover, weights_new
+    return df_portfolio_balanced, transactions, fees, cash_leftover
 
 
 st.set_page_config(
@@ -31,71 +32,41 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="auto",
 )
-st.title("Porfolio balancer")
 
-df_portfolio = pd.DataFrame({
-    "assets": ["CW8.PA", "PAEEM.PA", "RS2K.PA", "SMC.PA", "EESM.PA"],
-    "shares": [53, 51, 4, 1, 2],
-    "target_weights": [.84, .04, .06, .03, .03]
-})
-
-st.header("Settings")
-with st.form("portfolio_settings"):
+with st.sidebar:
+    st.title("Portfolio balancing")
+    st.caption("Optimize the rebalancing of your portfolio.")
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.dataframe(df_portfolio.style.format({"target_weights": "{:.2%}"}))
-    
-    with col2:
-        cash = st.number_input("Cash available", min_value=1000.0)
+    with st.form("portfolio_settings"):
+        
+        st.markdown("""
+                    Upload a csv file with the following columns: 
+                    * Assets: tickers (yahoo style) of your current/desired positions
+                    * Shares: number of shares currently owned (0 for asset you would like to include in the portfolio)
+                    * Weights: target allocation. The column must sum to 1
+                    """)
+        file = st.file_uploader("", "csv")
+        cash = st.number_input("Cash available", min_value=0., value=1000.0)
         no_selling = st.checkbox("No sell operation", value=True)
-    
-    submitted = st.form_submit_button("Balance")
+        
+        if file is not None:
+            df_portfolio = data.validate_file(file)
+            df_portfolio, df_prices = data.augment(df_portfolio, cash)    
+        
+        submitted = st.form_submit_button("Balance")
+        
 
 if submitted and cash > 0.0:
-    assets = df_portfolio["assets"].values.ravel()
-    shares = df_portfolio["shares"].values.ravel()
-    target_weights = df_portfolio["target_weights"].values.ravel()
     
-    portfolio = Portfolio(shares, cash, fees_func)
+    with st.spinner("Just a second..."):
+        df_portfolio_rebalanced, transactions, fees, cash_leftover = rebalance(df_portfolio, cash, no_selling)
     
-    with st.spinner("Rebalancing..."):
-        prices = get_last_prices(assets)
-        shares_buy = portfolio.rebalance(prices, target_weights, no_selling=no_selling)
-        
-        transaction, fees, cash_leftover, weights_new = get_metrics(prices, shares, cash, target_weights, shares_buy)
+    col_current, col_rebalanced = st.columns(2)
+    with col_current:
+        df_portfolio = df_portfolio[["Assets", "Shares", "Weights", "Target weights", "Prices", "Position"]]
+        ui.summary(df_portfolio, cash, "Current")
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        
-        st.header("Operations")
-        for a, s, p, f in zip(assets, shares_buy, prices, fees):
-            if s != 0.:
-                op_type = "buy" if s > 0. else "sell"
-                s = int(s)
-                cash_delta = -1 * s * p
-                
-                st.text(f"{a}: {op_type} {np.abs(s)} @ {p:.2f}€ ({-1 * s * p:.2f}€ -{f:.2f}€)")
-        
-        st.header("Resulting allocation")
-        df_new_allocation = pd.DataFrame({
-            "assets": assets,
-            "shares": (shares + shares_buy).astype(int),
-            "weights": weights_new
-        })
-        st.dataframe(df_new_allocation.style.format({"weights": "{:.2%}"}))
-        
-    
-    with col2:
-        st.header("Cash balance")
-        
-        st.caption("Cash invested")
-        st.text(f"{transaction.sum():.2f}€")
-
-        st.caption("Fees")
-        st.text(f"{fees.sum():.2f}€")
-        
-        st.caption("Cash leftover")
-        st.text(f"{cash_leftover:.2f}€")
+    with col_rebalanced:
+        df_portfolio_rebalanced = df_portfolio_rebalanced[["Assets", "Shares", "Weights", "Target weights", "Prices", "Position", "Buy/sold"]]
+        ui.summary(df_portfolio_rebalanced, cash_leftover, "Rebalanced")
+        st.subheader(f"Fees: {fees.sum():,.2f}€")
