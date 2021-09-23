@@ -7,9 +7,9 @@ from src.portfolio import Portfolio, fees_func
 
 
 def rebalance(df_portfolio, cash, no_selling):
-    shares = df_portfolio["Shares"].values.ravel()
-    prices = df_portfolio["Prices"].values.ravel()
-    target_weights = df_portfolio["Target weights"].values.ravel()
+    shares = df_portfolio["Share"].values.ravel()
+    prices = df_portfolio["Price"].values.ravel()
+    target_weights = df_portfolio["Target weight"].values.ravel()
     
     portfolio = Portfolio(shares, cash, fees_func)
     shares_buy = portfolio.rebalance(prices, target_weights, no_selling=no_selling)
@@ -18,10 +18,10 @@ def rebalance(df_portfolio, cash, no_selling):
     cash_leftover = cash - (transactions.sum() + fees.sum())
     
     df_portfolio_balanced = df_portfolio.copy()
-    df_portfolio_balanced["Shares"] = df_portfolio_balanced["Shares"] + shares_buy.astype(int)
+    df_portfolio_balanced["Share"] = df_portfolio_balanced["Share"] + shares_buy.astype(int)
     df_portfolio_balanced["Buy/sold"] = shares_buy.astype(int)
-    df_portfolio_balanced["Position"] = df_portfolio_balanced["Shares"] * df_portfolio_balanced["Prices"]
-    df_portfolio_balanced["Weights"] = df_portfolio_balanced["Position"] / (df_portfolio_balanced["Position"].sum() + cash_leftover)
+    df_portfolio_balanced["Position"] = df_portfolio_balanced["Share"] * df_portfolio_balanced["Price"]
+    df_portfolio_balanced["Weight"] = df_portfolio_balanced["Position"] / (df_portfolio_balanced["Position"].sum() + cash_leftover)
     
     return df_portfolio_balanced, transactions, fees, cash_leftover
 
@@ -41,9 +41,9 @@ with st.sidebar:
         
         st.markdown("""
                     Upload a csv file with the following columns: 
-                    * Assets: tickers (yahoo style) of your current/desired positions
-                    * Shares: number of shares currently owned (0 for asset you would like to include in the portfolio)
-                    * Weights: target allocation. The column must sum to 1
+                    * Asset: tickers (yahoo style) of your current/desired positions
+                    * Share: number of shares currently owned (0 for asset you would like to include in the portfolio)
+                    * Weight: target allocation. The column must sum to 1
                     """)
         file = st.file_uploader("", "csv")
         cash = st.number_input("Cash available", min_value=0., value=1000.0)
@@ -63,10 +63,10 @@ if submitted and cash > 0.0:
     
     col_current, col_rebalanced = st.columns(2)
     with col_current:
-        df_portfolio = df_portfolio[["Assets", "Shares", "Weights", "Target weights", "Prices", "Position"]]
+        df_portfolio = df_portfolio[["Asset", "Share", "Weight", "Target weight", "Price", "Position"]]
         ui.summary(df_portfolio, cash, "Current")
     
     with col_rebalanced:
-        df_portfolio_rebalanced = df_portfolio_rebalanced[["Assets", "Shares", "Weights", "Target weights", "Prices", "Position", "Buy/sold"]]
+        df_portfolio_rebalanced = df_portfolio_rebalanced[["Asset", "Share", "Weight", "Target weight", "Price", "Position", "Buy/sold"]]
         ui.summary(df_portfolio_rebalanced, cash_leftover, "Rebalanced")
         st.subheader(f"Fees: {fees.sum():,.2f}€")

@@ -5,9 +5,9 @@ import plotly.graph_objects as go
 
 def format_portfolio(df_portfolio):
     df_portfolio =  df_portfolio.style.format({
-        "Weights": "{:.2%}",
-        "Target weights": "{:.2%}",
-        "Prices": "{:,.2f}€",
+        "Weight": "{:.2%}",
+        "Target weight": "{:.2%}",
+        "Price": "{:,.2f}€",
         "Position": "{:,.2f}€"
     })
     
@@ -43,7 +43,7 @@ def summary(df_portfolio, cash, label):
     fig = go.Figure()
     fig.add_trace(
         go.Pie(
-            labels=list(df_portfolio["Assets"]) + ["Cash"],
+            labels=list(df_portfolio["Asset"]) + ["Cash"],
             values=list(df_portfolio["Position"]) + [cash],
             sort=False
         )

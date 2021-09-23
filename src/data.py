@@ -9,9 +9,9 @@ from pandera import Check, Column, DataFrameSchema, Index, errors
 
 portfolio_schema = DataFrameSchema(
     {
-        "Assets": Column(str),
-        "Shares": Column(int),
-        "Weights": Column(float, checks=[
+        "Asset": Column(str),
+        "Share": Column(int),
+        "Weight": Column(float, checks=[
             Check(lambda s: (s >= 0.0) & (s <= 1.0)),
             Check(lambda s: np.sum(s) == 1.0)
         ]),
@@ -34,14 +34,14 @@ def validate_file(file):
 
 @st.cache(show_spinner=False)
 def augment(df_portfolio, cash):
-    assets = df_portfolio["Assets"].values.ravel()
+    assets = df_portfolio["Asset"].values.ravel()
     df_prices = quotes(assets, 30)
     
     last_trading_day = df_prices["Date"].max()
-    df_portfolio["Prices"] = df_prices.loc[df_prices["Date"] == last_trading_day, "Close"].values
-    df_portfolio["Position"] = df_portfolio["Shares"] * df_portfolio["Prices"]
-    df_portfolio["Target weights"] = df_portfolio["Weights"]
-    df_portfolio["Weights"] = df_portfolio["Position"] / (df_portfolio["Position"].sum() + cash)
+    df_portfolio["Price"] = df_prices.loc[df_prices["Date"] == last_trading_day, "Close"].values
+    df_portfolio["Position"] = df_portfolio["Share"] * df_portfolio["Price"]
+    df_portfolio["Target weight"] = df_portfolio["Weight"]
+    df_portfolio["Weight"] = df_portfolio["Position"] / (df_portfolio["Position"].sum() + cash)
     
     return df_portfolio, df_prices
 
