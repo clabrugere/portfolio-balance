@@ -2,7 +2,7 @@
 
 ![Portfolio balancer](static/portfolio_balancer.png "Portfolio balancer")
 
-Streamlit application to rebalance a security portfolio automatically based on a target allocation and current market prices.
+Streamlit application to rebalance a portfolio of securities automatically, based on a target allocation and current market prices.
 
 ## Installation
 
@@ -17,6 +17,8 @@ In a new environment, install the required packages:
 `
 pip install -r requirements.txt
 `
+
+_Note that you can change the `fees_func` in `src/portfolio.py` to adapt to your broker's fees logic._
 
 ## Usage
 
