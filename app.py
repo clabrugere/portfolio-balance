@@ -75,7 +75,7 @@ with st.sidebar:
 if file is not None and submitted and (cash > 0.0 or no_selling is False):
     
     with st.spinner("Just a second..."):
-        df_portfolio_rebalanced, transactions, fees, cash_leftover = rebalance(df_portfolio, cash, no_selling)
+        df_portfolio_rebalanced, transactions, fees, cash_remaining = rebalance(df_portfolio, cash, no_selling)
     
     visualization.how_it_works()
     col_current, col_rebalanced = st.columns(2)
@@ -86,5 +86,5 @@ if file is not None and submitted and (cash > 0.0 or no_selling is False):
     
     with col_rebalanced:
         df_portfolio_rebalanced = df_portfolio_rebalanced[["Asset", "Share", "Weight", "Target weight", "Price", "Position", "Buy/sold"]]
-        visualization.summary(df_portfolio_rebalanced, cash_leftover, "Rebalanced")
+        visualization.summary(df_portfolio_rebalanced, cash_remaining, "Rebalanced")
         st.subheader(f"Fees: {fees.sum():,.2f}€")

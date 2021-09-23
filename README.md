@@ -33,24 +33,11 @@ Select the amount of cash you want to invest, and click "Balance"
 
 It solves the non-linear problem with a non-linear constraint defined as:
 
-$$
-\underset{\Delta s} min \quad \sum_{i} \mid (s_{i} + \Delta s_{i}) \cdot p_{i} - w_{i}^{target} \cdot V \mid + \ C^{\ remaining}
-\\ \text{s.t} \quad C^{\ remaining} \geq 0
-$$
+![Optim problem](static/optim_problem.svg)
 
-where 
+where:
 
-$$
-\Delta s_{i}: \ \text{number of shares of asset} \ i \ \text{to buy or sell} \\
-s_{i}: \ \text{number of shares of asset (integer)} \ i \\
-p_{i}: \ \text{price of asset} \ i \\
-w_{i}^{target} \ \text{target allocation for asset} \ i \\
-V = \sum_{i} s_{i} \cdot p_{i} + C: \ \text{total portfolio value} \\
-C: \ \text{amount of cash to invest} \\
-C^{\ remaining} = C - \sum_{i} \left( \Delta s_{i} \cdot p_{i} + F(\Delta s_{i}) \right) \ \text{cash remaining after rebalancing} \\
-F: \ \text{function describing the transaction fees to buy or sell shares} \ \Delta s_{i} \\
-
-$$
+![Variables](static/variables.svg)
 
 Because the independant variable is discrete, the objective and constraint non-linear (because $F$ is non linear), the optimal solution is searched using scipy implementation of Differential Evolution.
 

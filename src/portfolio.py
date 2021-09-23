@@ -35,7 +35,7 @@ class Portfolio:
 
         bounds = self._get_bounds(no_selling)
         x0 = np.array([np.mean(b) for b in bounds])
-        constraints = NonlinearConstraint(self._cash_leftover, 0.0, np.inf, keep_feasible=True)
+        constraints = NonlinearConstraint(self._cash_remaining, 0.0, np.inf, keep_feasible=True)
         
         results = differential_evolution(
             self._objective,
@@ -64,7 +64,7 @@ class Portfolio:
         
         return list(zip(lb, hb))
     
-    def _cash_leftover(self, shares_delta):
+    def _cash_remaining(self, shares_delta):
         shares_delta = np.round(shares_delta)
         position_delta = shares_delta * self.prices
         fees = np.array([self.fee_func(x) for x in position_delta])
@@ -72,10 +72,10 @@ class Portfolio:
         return self.cash - (position_delta.sum() + fees.sum())
 
     def _objective(self, shares_delta):
-        cash_leftover = self._cash_leftover(shares_delta)
+        cash_remaining = self._cash_remaining(shares_delta)
         position_delta = np.abs(self.positions + np.round(shares_delta) * self.prices - self.target_positions).sum()
         
-        return position_delta + cash_leftover
+        return position_delta + cash_remaining
 
 
 def fees_func(x):
