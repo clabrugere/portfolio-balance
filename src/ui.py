@@ -3,6 +3,17 @@ import pandas as pd
 import plotly.graph_objects as go
 
 
+def format_portfolio(df_portfolio):
+    df_portfolio =  df_portfolio.style.format({
+        "Weights": "{:.2%}",
+        "Target weights": "{:.2%}",
+        "Prices": "{:,.2f}€",
+        "Position": "{:,.2f}€"
+    })
+    
+    return df_portfolio
+
+
 def assets_value(df_prices):
     st.header("Assets value")
     
@@ -26,14 +37,15 @@ def assets_value(df_prices):
     st.plotly_chart(fig)
 
 
-def summary(df_portfolio, label):
+def summary(df_portfolio, cash, label):
     st.header(label)
     
     fig = go.Figure()
     fig.add_trace(
         go.Pie(
-            labels=df_portfolio["Assets"],
-            values=df_portfolio["Weights"]
+            labels=list(df_portfolio["Assets"]) + ["Cash"],
+            values=list(df_portfolio["Position"]) + [cash],
+            sort=False
         )
     )
     fig.update_layout(
@@ -41,9 +53,6 @@ def summary(df_portfolio, label):
     )
     
     st.plotly_chart(fig)
-    st.dataframe(df_portfolio)
-    st.subheader("Total positions: €")
-
-
-def operations(df_operations):
-    pass
+    st.dataframe(format_portfolio(df_portfolio))
+    st.subheader(f"Total positions: {df_portfolio['Position'].sum():,.2f}€")
+    st.subheader(f"Cash: {cash:,.2f}€")

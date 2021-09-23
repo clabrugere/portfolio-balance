@@ -33,13 +33,15 @@ def validate_file(file):
 
 
 @st.cache(show_spinner=False)
-def augment(df_portfolio):
+def augment(df_portfolio, cash):
     assets = df_portfolio["Assets"].values.ravel()
     df_prices = quotes(assets, 30)
     
     last_trading_day = df_prices["Date"].max()
-    df_portfolio["prices"] = df_prices.loc[df_prices["Date"] == last_trading_day, "Close"].values
-    df_portfolio["position"] = df_portfolio["Shares"] * df_portfolio["prices"]
+    df_portfolio["Prices"] = df_prices.loc[df_prices["Date"] == last_trading_day, "Close"].values
+    df_portfolio["Position"] = df_portfolio["Shares"] * df_portfolio["Prices"]
+    df_portfolio["Target weights"] = df_portfolio["Weights"]
+    df_portfolio["Weights"] = df_portfolio["Position"] / (df_portfolio["Position"].sum() + cash)
     
     return df_portfolio, df_prices
 
