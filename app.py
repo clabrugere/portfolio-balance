@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from src import ui, data
+from src import visualization, data
 from src.portfolio import Portfolio, fees_func
 
 
@@ -39,7 +39,7 @@ with st.sidebar:
     
     with st.form("portfolio_settings"):
         
-        st.markdown("""
+        st.markdown(r"""
                     Upload a csv file with the following columns: 
                     * Asset: tickers (yahoo style) of your current/desired positions
                     * Share: number of shares currently owned (0 for asset you would like to include in the portfolio)
@@ -64,9 +64,11 @@ if submitted and cash > 0.0:
     col_current, col_rebalanced = st.columns(2)
     with col_current:
         df_portfolio = df_portfolio[["Asset", "Share", "Weight", "Target weight", "Price", "Position"]]
-        ui.summary(df_portfolio, cash, "Current")
+        visualization.summary(df_portfolio, cash, "Current")
     
     with col_rebalanced:
         df_portfolio_rebalanced = df_portfolio_rebalanced[["Asset", "Share", "Weight", "Target weight", "Price", "Position", "Buy/sold"]]
-        ui.summary(df_portfolio_rebalanced, cash_leftover, "Rebalanced")
+        visualization.summary(df_portfolio_rebalanced, cash_leftover, "Rebalanced")
         st.subheader(f"Fees: {fees.sum():,.2f}€")
+        
+    visualization.how_it_works()

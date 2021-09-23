@@ -9,12 +9,13 @@ from pandera import Check, Column, DataFrameSchema, Index, errors
 
 portfolio_schema = DataFrameSchema(
     {
-        "Asset": Column(str),
+        "Asset": Column(str, allow_duplicates=False),
         "Share": Column(int),
         "Weight": Column(float, checks=[
             Check(lambda s: (s >= 0.0) & (s <= 1.0)),
             Check(lambda s: np.sum(s) == 1.0)
         ]),
+        "Freeze": Column(bool, required=False),
     },
     index=Index(int),
     strict=True,
@@ -35,7 +36,7 @@ def validate_file(file):
 @st.cache(show_spinner=False)
 def augment(df_portfolio, cash):
     assets = df_portfolio["Asset"].values.ravel()
-    df_prices = quotes(assets, 30)
+    df_prices = quotes(assets, 0)
     
     last_trading_day = df_prices["Date"].max()
     df_portfolio["Price"] = df_prices.loc[df_prices["Date"] == last_trading_day, "Close"].values

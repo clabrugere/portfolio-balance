@@ -20,8 +20,9 @@ class Portfolio:
         no_selling=True,
         strategy="best1bin",
         init="sobol",
-        mutation=(0.5, 1),
-        recombination=0.7,
+        popsize=20,
+        mutation=(0.6, 1.1),
+        recombination=0.6,
         seed=None,
     ):
 
@@ -34,7 +35,7 @@ class Portfolio:
 
         bounds = self._get_bounds(no_selling)
         x0 = np.array([np.mean(b) for b in bounds])
-        constraints = NonlinearConstraint(self._cash_constraint, 0.0, self.cash)
+        constraints = NonlinearConstraint(self._cash_constraint, 0.0, self.cash, keep_feasible=True)
         
         results = differential_evolution(
             self._objective,
@@ -43,6 +44,7 @@ class Portfolio:
             init=init,
             constraints=constraints,
             x0=x0,
+            popsize=popsize,
             mutation=mutation,
             recombination=recombination,
             seed=seed
@@ -64,21 +66,21 @@ class Portfolio:
 
     def _transaction_costs(self, shares_delta):
         shares_delta = np.round(shares_delta)
-        cash_delta = shares_delta * self.prices
-        fees = np.array([self.fee_func(x) for x in shares_delta * self.prices])
+        position_delta = shares_delta * self.prices
+        fees = np.array([self.fee_func(x) for x in position_delta])
 
-        return cash_delta, fees
+        return position_delta, fees
 
     def _objective(self, shares_rebalanced):
-        cash_delta, fees = self._transaction_costs(shares_rebalanced)
-        cash_leftover = self.cash - (cash_delta.sum() + fees.sum())
-        position_delta = np.abs(self.positions + cash_delta - self.target_positions).sum()
+        position_delta, fees = self._transaction_costs(shares_rebalanced)
+        cash_leftover = self.cash - (position_delta.sum() + fees.sum())
+        position_delta = np.abs(self.positions + position_delta - self.target_positions).sum()
         
         return position_delta + cash_leftover
 
-    def _cash_constraint(self, shares_rebalanced):
-        cash_delta, fees = self._transaction_costs(shares_rebalanced)
-        return cash_delta.sum() + fees.sum()
+    def _cash_constraint(self, shares_delta):
+        position_delta, fees = self._transaction_costs(shares_delta)
+        return position_delta.sum() + fees.sum()
 
 
 def fees_func(x):
