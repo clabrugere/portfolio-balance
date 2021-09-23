@@ -2,8 +2,27 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from src import visualization, data
+from src import data, visualization
 from src.portfolio import Portfolio, fees_func
+
+
+@st.cache(show_spinner=False)
+def fetch_quotes(df_portfolio):
+    assets = df_portfolio["Asset"].values.ravel()
+    
+    return data.quotes(assets, 0) 
+
+
+def load_portfolio(file, cash):
+    df_portfolio = data.validate_file(file)
+    df_prices = fetch_quotes(df_portfolio)
+
+    last_trading_day = df_prices["Date"].max()
+    df_portfolio["Price"] = df_prices.loc[df_prices["Date"] == last_trading_day, "Close"].values
+    df_portfolio["Position"] = df_portfolio["Share"] * df_portfolio["Price"]
+    df_portfolio["Weight"] = df_portfolio["Position"] / (df_portfolio["Position"].sum() + cash) 
+    
+    return df_portfolio
 
 
 def rebalance(df_portfolio, cash, no_selling):
@@ -12,14 +31,14 @@ def rebalance(df_portfolio, cash, no_selling):
     target_weights = df_portfolio["Target weight"].values.ravel()
     
     portfolio = Portfolio(shares, cash, fees_func)
-    shares_buy = portfolio.rebalance(prices, target_weights, no_selling=no_selling)
-    transactions = shares_buy * prices
+    shares_delta = portfolio.rebalance(prices, target_weights, no_selling=no_selling)
+    transactions = shares_delta * prices
     fees = np.array([fees_func(x) for x in transactions])
     cash_leftover = cash - (transactions.sum() + fees.sum())
     
     df_portfolio_balanced = df_portfolio.copy()
-    df_portfolio_balanced["Share"] = df_portfolio_balanced["Share"] + shares_buy.astype(int)
-    df_portfolio_balanced["Buy/sold"] = shares_buy.astype(int)
+    df_portfolio_balanced["Share"] = df_portfolio_balanced["Share"] + shares_delta
+    df_portfolio_balanced["Buy/sold"] = shares_delta
     df_portfolio_balanced["Position"] = df_portfolio_balanced["Share"] * df_portfolio_balanced["Price"]
     df_portfolio_balanced["Weight"] = df_portfolio_balanced["Position"] / (df_portfolio_balanced["Position"].sum() + cash_leftover)
     
@@ -43,25 +62,24 @@ with st.sidebar:
                     Upload a csv file with the following columns: 
                     * Asset: tickers (yahoo style) of your current/desired positions
                     * Share: number of shares currently owned (0 for asset you would like to include in the portfolio)
-                    * Weight: target allocation. The column must sum to 1
+                    * Target weight: target allocation. The column must sum to 1
                     """)
         file = st.file_uploader("", "csv")
         cash = st.number_input("Cash available", min_value=0., value=1000.0)
         no_selling = st.checkbox("No sell operation", value=True)
-        
-        if file is not None:
-            df_portfolio = data.validate_file(file)
-            df_portfolio, df_prices = data.augment(df_portfolio, cash)    
-        
         submitted = st.form_submit_button("Balance")
         
+        if file is not None:
+            df_portfolio = load_portfolio(file, cash)  
 
-if submitted and cash > 0.0:
+if file is not None and submitted and (cash > 0.0 or no_selling is False):
     
     with st.spinner("Just a second..."):
         df_portfolio_rebalanced, transactions, fees, cash_leftover = rebalance(df_portfolio, cash, no_selling)
     
+    visualization.how_it_works()
     col_current, col_rebalanced = st.columns(2)
+    
     with col_current:
         df_portfolio = df_portfolio[["Asset", "Share", "Weight", "Target weight", "Price", "Position"]]
         visualization.summary(df_portfolio, cash, "Current")
@@ -70,5 +88,3 @@ if submitted and cash > 0.0:
         df_portfolio_rebalanced = df_portfolio_rebalanced[["Asset", "Share", "Weight", "Target weight", "Price", "Position", "Buy/sold"]]
         visualization.summary(df_portfolio_rebalanced, cash_leftover, "Rebalanced")
         st.subheader(f"Fees: {fees.sum():,.2f}€")
-        
-    visualization.how_it_works()

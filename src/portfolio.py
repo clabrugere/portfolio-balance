@@ -35,7 +35,7 @@ class Portfolio:
 
         bounds = self._get_bounds(no_selling)
         x0 = np.array([np.mean(b) for b in bounds])
-        constraints = NonlinearConstraint(self._cash_constraint, 0.0, self.cash, keep_feasible=True)
+        constraints = NonlinearConstraint(self._cash_leftover, 0.0, np.inf, keep_feasible=True)
         
         results = differential_evolution(
             self._objective,
@@ -49,9 +49,9 @@ class Portfolio:
             recombination=recombination,
             seed=seed
         )
-
         self.results = results
-        return np.round(results.x)
+        
+        return np.round(results.x).astype(int)
 
     def _get_bounds(self, no_selling):
         max_share_delta = (self.target_positions - self.positions) / self.prices
@@ -63,24 +63,19 @@ class Portfolio:
         hb = np.ceil(max_share_delta) + 1.
         
         return list(zip(lb, hb))
-
-    def _transaction_costs(self, shares_delta):
+    
+    def _cash_leftover(self, shares_delta):
         shares_delta = np.round(shares_delta)
         position_delta = shares_delta * self.prices
         fees = np.array([self.fee_func(x) for x in position_delta])
+        
+        return self.cash - (position_delta.sum() + fees.sum())
 
-        return position_delta, fees
-
-    def _objective(self, shares_rebalanced):
-        position_delta, fees = self._transaction_costs(shares_rebalanced)
-        cash_leftover = self.cash - (position_delta.sum() + fees.sum())
-        position_delta = np.abs(self.positions + position_delta - self.target_positions).sum()
+    def _objective(self, shares_delta):
+        cash_leftover = self._cash_leftover(shares_delta)
+        position_delta = np.abs(self.positions + np.round(shares_delta) * self.prices - self.target_positions).sum()
         
         return position_delta + cash_leftover
-
-    def _cash_constraint(self, shares_delta):
-        position_delta, fees = self._transaction_costs(shares_delta)
-        return position_delta.sum() + fees.sum()
 
 
 def fees_func(x):

@@ -1,6 +1,5 @@
-import streamlit as st
-import pandas as pd
 import plotly.graph_objects as go
+import streamlit as st
 
 
 def format_portfolio(df_portfolio):
@@ -12,29 +11,6 @@ def format_portfolio(df_portfolio):
     })
     
     return df_portfolio
-
-
-def assets_value(df_prices):
-    st.header("Assets value")
-    
-    fig = go.Figure()
-    for a in df_prices["Symbols"].unique():
-        df_asset = df_prices[df_prices["Symbols"] == a]
-        fig.add_trace(
-            go.Candlestick(
-                name=a,
-                x=df_asset["Date"],
-                open=df_asset["Open"],
-                close=df_asset["Close"],
-                high=df_asset["High"],
-                low=df_asset["Low"]
-            )
-        )
-    fig.update_layout(
-        margin=dict(l=20, r=20, t=20, b=20)
-    )
-    
-    st.plotly_chart(fig)
 
 
 def summary(df_portfolio, cash, label):
@@ -61,26 +37,26 @@ def summary(df_portfolio, cash, label):
 def how_it_works():
     with st.expander("How it works"):
         st.markdown(r"""
-                    It solves a non-linear problem with a non-linear constraint defined as:
-                    
+                    It solves the non-linear problem with a non-linear constraint defined as:
+
                     $$
-                    \underset{\Delta s} min \quad \sum_{i} \mid ( s_{i} + \Delta s_{i} - s_{i}^{target} ) \cdot p_{i} \mid + \ C - \sum_{i} ( \Delta s_{i} \cdot p_{i} + F(\Delta s_{i}) )
-                    \\ \text{s.t} \quad 0 \leq \sum_{i} \Delta s_{i} + F(\Delta s_{i}) \leq C
+                    \underset{\Delta s} min \quad \sum_{i} \mid (s_{i} + \Delta s_{i}) \cdot p_{i} - w_{i}^{target} \cdot V \mid + \ C^{\ remaining}
+                    \\ \text{s.t} \quad C^{\ remaining} \geq 0
                     $$
-                    
+
                     where 
-                    
+
                     $$
-                    s_{i}: \ \text{number of shares of asset (integer)} \ i \\
-                    s_{i}^{target}: \ \text{number of shares of asset} \ i \ \text{to satisfy the target allocation} \\
                     \Delta s_{i}: \ \text{number of shares of asset} \ i \ \text{to buy or sell} \\
+                    s_{i}: \ \text{number of shares of asset (integer)} \ i \\
                     p_{i}: \ \text{price of asset} \ i \\
-                    F: \ \text{function describing the transaction fees to buy or sell shares} \ \Delta s_{i} \\
+                    w_{i}^{target} \ \text{target allocation for asset} \ i \\
+                    V = \sum_{i} s_{i} \cdot p_{i} + C: \ \text{total portfolio value} \\
                     C: \ \text{amount of cash to invest} \\
-                        
-                    \ C - \sum_{i} ( \Delta s_{i} \cdot p_{i} + F(\Delta s_{i}) ) \ \text{is then the leftover cash after rebalancing}
-                    
+                    C^{\ remaining} = C - \sum_{i} \left( \Delta s_{i} \cdot p_{i} + F(\Delta s_{i}) \right) \ \text{cash remaining after rebalancing} \\
+                    F: \ \text{function describing the transaction fees to buy or sell shares} \ \Delta s_{i} \\
+
                     $$
-                    
+
                     Because the independant variable is discrete, the objective and constraint non-linear (because $F$ is non linear), the optimal solution is searched using scipy implementation of Differential Evolution.
                     """)
