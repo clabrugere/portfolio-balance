@@ -2,6 +2,7 @@
 ## This default template includes entries for R, Python and visual studio
 
 # exclude data from source control by default
+notebooks/**
 data/**
 !data/*/
 !data/*/.gitkeep
