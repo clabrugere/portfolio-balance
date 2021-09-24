@@ -20,8 +20,8 @@ class Portfolio:
         no_selling=True,
         strategy="best1bin",
         init="sobol",
-        popsize=20,
-        mutation=(0.6, 1.1),
+        popsize=30,
+        mutation=(0.5, 1.),
         recombination=0.6,
         seed=None,
     ):
@@ -35,8 +35,10 @@ class Portfolio:
 
         bounds = self._get_bounds(no_selling)
         x0 = np.array([np.mean(b) for b in bounds])
-        constraints = NonlinearConstraint(self._cash_remaining, 0.0, np.inf, keep_feasible=True)
-        
+        constraints = NonlinearConstraint(
+            self._cash_remaining, 0.0, np.inf, keep_feasible=True
+        )
+
         results = differential_evolution(
             self._objective,
             bounds=bounds,
@@ -47,34 +49,38 @@ class Portfolio:
             popsize=popsize,
             mutation=mutation,
             recombination=recombination,
-            seed=seed
+            seed=seed,
         )
         self.results = results
-        
+
         return np.round(results.x).astype(int)
 
     def _get_bounds(self, no_selling):
         max_share_delta = (self.target_positions - self.positions) / self.prices
-        
+
         if no_selling:
-            max_share_delta = np.clip(max_share_delta, a_min=1., a_max=None)
-        
-        lb = np.floor(max_share_delta) - 1.
-        hb = np.ceil(max_share_delta) + 1.
-        
+            max_share_delta = np.clip(max_share_delta, a_min=1.0, a_max=None)
+
+        lb = np.floor(max_share_delta) - 1.0
+        hb = np.ceil(max_share_delta) + 1.0
+
         return list(zip(lb, hb))
-    
+
     def _cash_remaining(self, shares_delta):
         shares_delta = np.round(shares_delta)
         position_delta = shares_delta * self.prices
         fees = np.array([self.fee_func(x) for x in position_delta])
-        
+
         return self.cash - (position_delta.sum() + fees.sum())
 
     def _objective(self, shares_delta):
         cash_remaining = self._cash_remaining(shares_delta)
-        position_delta = np.abs(self.positions + np.round(shares_delta) * self.prices - self.target_positions).sum()
-        
+        position_delta = np.abs(
+            self.positions
+            + np.round(shares_delta) * self.prices
+            - self.target_positions
+        ).sum()
+
         return position_delta + cash_remaining
 
 

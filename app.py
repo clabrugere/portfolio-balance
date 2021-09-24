@@ -16,11 +16,18 @@ def fetch_quotes(df_portfolio):
 def load_portfolio(file, cash):
     df_portfolio = data.validate_file(file)
     df_prices = fetch_quotes(df_portfolio)
-
+    
     last_trading_day = df_prices["Date"].max()
-    df_portfolio["Price"] = df_prices.loc[df_prices["Date"] == last_trading_day, "Close"].values
+    prices = df_prices.loc[df_prices["Date"] == last_trading_day, "Close"].values
+    
+    if "Target Price" in df_portfolio.columns:
+        target_prices = df_portfolio["Target Price"].values
+        prices[~np.isnan(target_prices)] = target_prices[~np.isnan(target_prices)]
+        df_portfolio = df_portfolio.drop("Target Price", axis=1)
+        
+    df_portfolio["Price"] = prices
     df_portfolio["Position"] = df_portfolio["Share"] * df_portfolio["Price"]
-    df_portfolio["Weight"] = df_portfolio["Position"] / (df_portfolio["Position"].sum() + cash) 
+    df_portfolio["Weight"] = df_portfolio["Position"] / (df_portfolio["Position"].sum() + cash)
     
     return df_portfolio
 
@@ -87,4 +94,4 @@ if file is not None and submitted and (cash > 0.0 or no_selling is False):
     with col_rebalanced:
         df_portfolio_rebalanced = df_portfolio_rebalanced[["Asset", "Share", "Weight", "Target weight", "Price", "Position", "Buy/sold"]]
         visualization.summary(df_portfolio_rebalanced, cash_remaining, "Rebalanced")
-        st.subheader(f"Fees: {fees.sum():,.2f}€")
+        st.text(f"Fees: {fees.sum():,.2f}€")

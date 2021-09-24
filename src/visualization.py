@@ -30,8 +30,8 @@ def summary(df_portfolio, cash, label):
     
     st.plotly_chart(fig)
     st.dataframe(format_portfolio(df_portfolio))
-    st.subheader(f"Total positions: {df_portfolio['Position'].sum():,.2f}€")
-    st.subheader(f"Cash: {cash:,.2f}€")
+    st.text(f"Total positions: {df_portfolio['Position'].sum():,.2f}€")
+    st.text(f"Cash: {cash:,.2f}€")
 
 
 def how_it_works():

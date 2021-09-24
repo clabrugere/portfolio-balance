@@ -10,11 +10,16 @@ portfolio_schema = DataFrameSchema(
     {
         "Asset": Column(str, allow_duplicates=False),
         "Share": Column(int),
-        "Target weight": Column(float, checks=[
-            Check(lambda s: (s >= 0.0) & (s <= 1.0)),
-            Check(lambda s: np.sum(s) == 1.0)
-        ]),
-        "Freeze": Column(bool, required=False),
+        "Target weight": Column(
+            float,
+            checks=[
+                Check(lambda s: (s >= 0.0) & (s <= 1.0)),
+                Check(lambda s: np.sum(s) == 1.0),
+            ],
+        ),
+        "Target Price": Column(
+            float, checks=[Check(lambda s: s >= 0.0)], required=False, nullable=True
+        ),
     },
     index=Index(int),
     strict=True,
@@ -27,7 +32,7 @@ def validate_file(file):
         df_portfolio = pd.read_csv(file)
         portfolio_schema(df_portfolio)
         return df_portfolio
-    
+
     except errors.SchemaErrors as err:
         raise err
 
