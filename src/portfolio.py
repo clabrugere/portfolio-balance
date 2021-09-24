@@ -21,7 +21,7 @@ class Portfolio:
         strategy="best1bin",
         init="sobol",
         popsize=30,
-        mutation=(0.5, 1.),
+        mutation=(0.5, 1.0),
         recombination=0.6,
         seed=None,
     ):
@@ -53,16 +53,16 @@ class Portfolio:
         )
         self.results = results
 
-        return np.round(results.x).astype(int)
+        return results.success, np.round(results.x).astype(int)
 
     def _get_bounds(self, no_selling):
-        max_share_delta = (self.target_positions - self.positions) / self.prices
+        max_share_delta = np.abs(self.target_positions - self.positions) / self.prices
+        hb = np.ceil(max_share_delta) + 1.0
 
         if no_selling:
-            max_share_delta = np.clip(max_share_delta, a_min=1.0, a_max=None)
-
-        lb = np.floor(max_share_delta) - 1.0
-        hb = np.ceil(max_share_delta) + 1.0
+            lb = np.zeros(len(hb))
+        else:
+            lb = -hb
 
         return list(zip(lb, hb))
 
@@ -85,7 +85,11 @@ class Portfolio:
 
 
 def fees_func(x):
-    if x < 1000:
+    x = np.abs(x)
+
+    if x == 0:
+        return 0.0
+    elif x < 1000:
         return 2.5
     elif 1000 <= x < 5000:
         return 5.0

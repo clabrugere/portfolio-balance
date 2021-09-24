@@ -38,10 +38,10 @@ def rebalance(df_portfolio, cash, no_selling):
     target_weights = df_portfolio["Target weight"].values.ravel()
     
     portfolio = Portfolio(shares, cash, fees_func)
-    shares_delta = portfolio.rebalance(prices, target_weights, no_selling=no_selling)
-    transactions = shares_delta * prices
-    fees = np.array([fees_func(x) for x in transactions])
-    cash_leftover = cash - (transactions.sum() + fees.sum())
+    success, shares_delta = portfolio.rebalance(prices, target_weights, no_selling=no_selling)
+    position_delta = shares_delta * prices
+    fees = np.array([fees_func(x) for x in position_delta])
+    cash_leftover = cash - (position_delta.sum() + fees.sum())
     
     df_portfolio_balanced = df_portfolio.copy()
     df_portfolio_balanced["Share"] = df_portfolio_balanced["Share"] + shares_delta
@@ -49,7 +49,7 @@ def rebalance(df_portfolio, cash, no_selling):
     df_portfolio_balanced["Position"] = df_portfolio_balanced["Share"] * df_portfolio_balanced["Price"]
     df_portfolio_balanced["Weight"] = df_portfolio_balanced["Position"] / (df_portfolio_balanced["Position"].sum() + cash_leftover)
     
-    return df_portfolio_balanced, transactions, fees, cash_leftover
+    return df_portfolio_balanced, position_delta, fees, cash_leftover, success
 
 
 st.set_page_config(
@@ -82,7 +82,12 @@ with st.sidebar:
 if file is not None and submitted and (cash > 0.0 or no_selling is False):
     
     with st.spinner("Just a second..."):
-        df_portfolio_rebalanced, transactions, fees, cash_remaining = rebalance(df_portfolio, cash, no_selling)
+        df_portfolio_rebalanced, transactions, fees, cash_remaining, success = rebalance(df_portfolio, cash, no_selling)
+    
+    if success:
+        st.success("Optimization successfull!")
+    else:
+        st.error("No solution was found!")
     
     visualization.how_it_works()
     col_current, col_rebalanced = st.columns(2)
