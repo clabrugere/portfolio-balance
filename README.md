@@ -2,7 +2,7 @@
 
 ![Portfolio balancer](static/portfolio_balancer.png "Portfolio balancer")
 
-Streamlit application I use to rebalance my portfolio of securities each time I credit cash to my brokerage account. It finds the optimal operations to match a target allocation given current portfolio state (owned shares, market prices) and of course, desired allocation.
+Streamlit application I use to rebalance my portfolio of securities each time I credit cash to my brokerage account. It finds the (quasi)-optimal set of operations to match a target allocation given current portfolio state (owned shares, market prices) and of course, desired allocation, with the least amount of cash remaining (including my broker's fees).
 
 ## Installation
 
