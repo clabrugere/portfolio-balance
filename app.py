@@ -1,16 +1,19 @@
+import logging
 import numpy as np
-import pandas as pd
 import streamlit as st
 
 from src import data, visualization
 from src.portfolio import Portfolio, fees_func
 
 
+logging.basicConfig(level=logging.INFO)
+
 @st.cache(show_spinner=False)
 def fetch_quotes(df_portfolio):
     assets = df_portfolio["Asset"].values.ravel()
+    df = data.quotes(assets, 0)
     
-    return data.quotes(assets, 0) 
+    return df
 
 
 def load_portfolio(file, cash):
@@ -29,6 +32,8 @@ def load_portfolio(file, cash):
     df_portfolio["Position"] = df_portfolio["Share"] * df_portfolio["Price"]
     df_portfolio["Weight"] = df_portfolio["Position"] / (df_portfolio["Position"].sum() + cash)
     
+    logging.info(f"shape of loaded portfolio: {df_portfolio.shape}")
+    
     return df_portfolio
 
 
@@ -39,6 +44,12 @@ def rebalance(df_portfolio, cash, no_selling):
     
     portfolio = Portfolio(shares, cash, fees_func)
     success, shares_delta = portfolio.rebalance(prices, target_weights, no_selling=no_selling)
+    
+    if success:
+        logging.info(f"sucessful optimization. Solution: {shares_delta}")
+    else:
+        logging.warning(f"the optimization did not converge. Solution: {shares_delta}")
+    
     position_delta = shares_delta * prices
     fees = np.array([fees_func(x) for x in position_delta])
     cash_leftover = cash - (position_delta.sum() + fees.sum())

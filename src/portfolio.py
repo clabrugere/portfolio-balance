@@ -85,17 +85,20 @@ class Portfolio:
 
 
 def fees_func(x):
-    x = np.abs(x)
-
-    if x == 0:
-        return 0.0
-    elif x < 1000:
-        return 2.5
-    elif 1000 <= x < 5000:
-        return 5.0
-    elif 5000 <= x < 7500:
-        return 7.5
-    elif 7500 <= x < 10000:
-        return 10.0
-    else:
-        return 0.001 * x
+    conds = [
+        x == 0.0,
+        x < 1000,
+        1000 <= x < 5000,
+        5000 <= x < 7500,
+        7500 <= x < 10000,
+        x >= 10000
+    ]
+    funcs = [
+        0.0,
+        2.5,
+        5.0,
+        7.5,
+        10.0,
+        lambda x: 0.001 * x
+    ]
+    return np.piecewise(np.abs(x), conds, funcs)
