@@ -14,16 +14,16 @@ class Portfolio:
         self.results = None
 
     def rebalance(
-        self,
-        prices,
-        target_weights,
-        no_selling=True,
-        strategy="best1bin",
-        init="sobol",
-        popsize=30,
-        mutation=(0.5, 1.0),
-        recombination=0.6,
-        seed=None,
+            self,
+            prices,
+            target_weights,
+            no_selling=True,
+            strategy="best1bin",
+            init="sobol",
+            popsize=30,
+            mutation=(0.5, 1.0),
+            recombination=0.6,
+            seed=None,
     ):
 
         self.prices = prices

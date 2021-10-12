@@ -6,7 +6,6 @@ import pandas as pd
 from pandas_datareader import data
 from pandera import Check, Column, DataFrameSchema, Index, errors
 
-
 portfolio_schema = DataFrameSchema(
     {
         "Asset": Column(str, allow_duplicates=False),
@@ -32,9 +31,9 @@ def validate_file(file):
     try:
         df_portfolio = pd.read_csv(file)
         portfolio_schema(df_portfolio)
-        
+
         logging.info("successful file validation")
-        
+
         return df_portfolio
 
     except errors.SchemaErrors as err:
@@ -50,8 +49,8 @@ def quotes(assets, look_back, end_date=None):
 
     df = data.DataReader(assets, "yahoo", start=start_date, end=end_date)
     df = df.stack(level=1).reset_index(level=[0, 1], drop=False).reset_index(drop=True)
-    
+
     logging.info(f"fetched quotes for {len(assets)} tickers from yahoo api")
     logging.info(f"shape of loaded dataframe: {df.shape}")
-    
+
     return df
