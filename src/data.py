@@ -41,7 +41,7 @@ def validate_file(file):
         raise err
 
 
-def quotes(assets, look_back, end_date=None):
+def prices(assets, look_back, end_date=None):
     if end_date:
         start_date = (end_date - timedelta(days=look_back)).strftime("%Y-%m-%d")
     else:

@@ -7,13 +7,14 @@ class Portfolio:
         self.shares = shares
         self.cash = cash
         self.fee_func = fee_func
+        self.prices = None
         self.target_weights = None
         self.positions = None
         self.portfolio_value = None
         self.target_positions = None
         self.results = None
 
-    def rebalance(
+    def balance(
             self,
             prices,
             target_weights,
@@ -84,14 +85,14 @@ class Portfolio:
         return position_delta + cash_remaining
 
 
-def fees_func(x):
+def fees_func(transaction):
     conds = [
-        x == 0.0,
-        x < 1000,
-        1000 <= x < 5000,
-        5000 <= x < 7500,
-        7500 <= x < 10000,
-        x >= 10000
+        transaction == 0.0,
+        transaction < 1000,
+        1000 <= transaction < 5000,
+        5000 <= transaction < 7500,
+        7500 <= transaction < 10000,
+        transaction >= 10000
     ]
     funcs = [
         0.0,
@@ -101,4 +102,4 @@ def fees_func(x):
         10.0,
         lambda x: 0.001 * x
     ]
-    return np.piecewise(np.abs(x), conds, funcs)
+    return np.piecewise(np.abs(transaction), conds, funcs)

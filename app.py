@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 @st.cache(show_spinner=False)
 def fetch_quotes(df_portfolio):
     assets = df_portfolio["Asset"].values.ravel()
-    df = data.quotes(assets, 0)
+    df = data.prices(assets, 0)
 
     return df
 
@@ -38,22 +38,22 @@ def load_portfolio(file, cash):
     return df_portfolio
 
 
-def rebalance(df_portfolio, cash, no_selling):
+def balance(df_portfolio, cash, no_selling):
     shares = df_portfolio["Share"].values.ravel()
     prices = df_portfolio["Price"].values.ravel()
     target_weights = df_portfolio["Target weight"].values.ravel()
 
     portfolio = Portfolio(shares, cash, fees_func)
-    success, shares_delta = portfolio.rebalance(prices, target_weights, no_selling=no_selling)
+    success, shares_delta = portfolio.balance(prices, target_weights, no_selling=no_selling)
 
     if success:
         logging.info(f"sucessful optimization. Solution: {shares_delta}")
     else:
         logging.warning(f"the optimization did not converge. Solution: {shares_delta}")
 
-    position_delta = shares_delta * prices
-    fees = np.array([fees_func(x) for x in position_delta])
-    cash_leftover = cash - (position_delta.sum() + fees.sum())
+    transactions = shares_delta * prices
+    fees = np.array([fees_func(t) for t in transactions])
+    cash_leftover = cash - (transactions.sum() + fees.sum())
 
     df_portfolio_balanced = df_portfolio.copy()
     df_portfolio_balanced["Share"] = df_portfolio_balanced["Share"] + shares_delta
@@ -62,7 +62,7 @@ def rebalance(df_portfolio, cash, no_selling):
     df_portfolio_balanced["Weight"] = df_portfolio_balanced["Position"] / (
                 df_portfolio_balanced["Position"].sum() + cash_leftover)
 
-    return df_portfolio_balanced, position_delta, fees, cash_leftover, success
+    return df_portfolio_balanced, transactions, fees, cash_leftover, success
 
 
 st.set_page_config(
@@ -74,7 +74,7 @@ st.set_page_config(
 
 with st.sidebar:
     st.title("Portfolio balancing")
-    st.caption("Optimize the rebalancing of your portfolio.")
+    st.caption("Optimize the balancing of your portfolio.")
 
     with st.form("portfolio_settings"):
         st.markdown(
@@ -96,7 +96,7 @@ with st.sidebar:
 if file is not None and submitted and (cash > 0.0 or no_selling is False):
 
     with st.spinner("Just a second..."):
-        df_portfolio_rebalanced, transactions, fees, cash_remaining, success = rebalance(df_portfolio, cash, no_selling)
+        df_portfolio_balanced, transactions, fees, cash_remaining, success = balance(df_portfolio, cash, no_selling)
 
     if success:
         st.success("Optimization successfull!")
@@ -111,7 +111,7 @@ if file is not None and submitted and (cash > 0.0 or no_selling is False):
         visualization.summary(df_portfolio, cash, "Current")
 
     with col_rebalanced:
-        df_portfolio_rebalanced = df_portfolio_rebalanced[
+        df_portfolio_balanced = df_portfolio_balanced[
             ["Asset", "Share", "Weight", "Target weight", "Price", "Position", "Buy/sold"]]
-        visualization.summary(df_portfolio_rebalanced, cash_remaining, "Rebalanced")
+        visualization.summary(df_portfolio_balanced, cash_remaining, "Rebalanced")
         st.text(f"Fees: {fees.sum():,.2f}€")
