@@ -88,11 +88,11 @@ class Portfolio:
 def fees_func(transaction):
     conds = [
         transaction == 0.0,
-        transaction < 1000,
-        1000 <= transaction < 5000,
-        5000 <= transaction < 7500,
-        7500 <= transaction < 10000,
-        transaction >= 10000
+        0 < transaction <= 1000,
+        1000 < transaction <= 5000,
+        5000 < transaction <= 7500,
+        7500 < transaction <= 10000,
+        transaction > 10000
     ]
     funcs = [
         0.0,

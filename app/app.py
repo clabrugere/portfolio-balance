@@ -55,6 +55,10 @@ def balance(df_portfolio, cash, no_selling):
     fees = np.array([fees_func(t) for t in transactions])
     cash_leftover = cash - (transactions.sum() + fees.sum())
 
+    logging.info(f"transactions: {transactions}")
+    logging.info(f"fees: {fees}")
+    logging.info(f"cash left: {cash_leftover}")
+
     df_portfolio_balanced = df_portfolio.copy()
     df_portfolio_balanced["Share"] = df_portfolio_balanced["Share"] + shares_delta
     df_portfolio_balanced["Buy/sold"] = shares_delta
