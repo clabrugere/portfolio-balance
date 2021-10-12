@@ -15,11 +15,30 @@ Clone the repository by running the command:
 git clone https://github.com/clabrugere/portfolio-balance.git
 `
 
+### Run locally
 In a new environment, install the required packages:
 
 `
 pip install -r requirements.txt
 `
+
+Launch the application:
+```
+streamlit run app.py
+```
+
+### Run from a Docker image
+Build the Docker image:
+```
+docker build -t portfolio-balance .
+```
+
+Instantiate the image in a new container:
+```
+docker run -d --name portfolio-balance-instance -p 80:80 portfolio-balance
+```
+
+You can now access the application in your browser: `http://127.0.0.1`
 
 _Note that you can change the `fees_func` in `src/portfolio.py` to adapt to your broker's fees logic._
 

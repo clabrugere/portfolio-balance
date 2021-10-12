@@ -4,8 +4,7 @@
 # exclude data from source control by default
 notebooks/**
 data/**
-!data/*/
-!data/*/.gitkeep
+!data/portfolio.csv
 
 ##
 ## R Section - See https://github.com/github/gitignore/blob/master/R.gitignore
